@@ -96,6 +96,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/Users/mjc626/STM32/modbus/Core/.DS_Store">
+			<Option target="modbus.elf"/>
+		</Unit>
 		<Unit filename="/Users/mjc626/STM32/modbus/Core/Inc/adc.h">
 			<Option target="modbus.elf"/>
 		</Unit>

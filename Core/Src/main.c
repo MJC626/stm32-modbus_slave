@@ -193,7 +193,7 @@ void updateGPIO(void) {
 void HAL_UART_IDLE_Callback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
         __HAL_UART_CLEAR_IDLEFLAG(huart); // 清除空闲中断标志位
-        modbus_process(modbusRxBuffer, inputregister,  coils, huart); // 使用 modbus 库处理报文
+        modbus_process(modbusRxBuffer, inputregister,  coils, huart); // 使用 modbus 库处理报文并回复
         updateGPIO();
         HAL_UART_Receive_IT(&huart1, modbusRxBuffer, MODBUS_RX_BUFFER_SIZE);// 重新启动 UART 接收中断
     }
