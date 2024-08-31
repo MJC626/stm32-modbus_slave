@@ -30,8 +30,8 @@
 #define ADC_CHANNELS 11          //adc通道数量
 #define MODBUS_RX_BUFFER_SIZE 256  // 缓冲区以支持不同长度的数据
 
-uint16_t inputregister[ADC_CHANNELS];//adc数组
 uint8_t modbusRxBuffer[MODBUS_RX_BUFFER_SIZE];//串口接收缓冲区
+uint16_t inputregister[ADC_CHANNELS];//adc数组
 uint8_t coils[3];//线圈数组
 /* USER CODE END Includes */
 
