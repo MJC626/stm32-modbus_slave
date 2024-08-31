@@ -28,8 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "modbus.h"
 #define ADC_CHANNELS 11          //adc通道数量
-#define MODBUS_RX_BUFFER_SIZE 8  // 最长报文长度
-
+#define MODBUS_RX_BUFFER_SIZE 256  // 缓冲区以支持不同长度的数据
 
 uint16_t inputregister[ADC_CHANNELS];//adc数组
 uint8_t modbusRxBuffer[MODBUS_RX_BUFFER_SIZE];//串口接收缓冲区
@@ -65,7 +64,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+extern DMA_HandleTypeDef hdma_usart1_rx;
 /* USER CODE END 0 */
 
 /**
@@ -106,18 +105,18 @@ int main(void)
     HAL_ADC_Start_DMA(&hadc1, (uint32_t*)inputregister, ADC_CHANNELS);
     // 启动 UART 接收中断
     __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE); // 启用空闲中断
-    HAL_UART_Receive_IT(&huart1, modbusRxBuffer, MODBUS_RX_BUFFER_SIZE);
+    HAL_UART_Receive_DMA(&huart1, modbusRxBuffer, MODBUS_RX_BUFFER_SIZE);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    while (1)
+    {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-  }
+    }
   /* USER CODE END 3 */
 }
 
@@ -193,9 +192,22 @@ void updateGPIO(void) {
 void HAL_UART_IDLE_Callback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
         __HAL_UART_CLEAR_IDLEFLAG(huart); // 清除空闲中断标志位
-        modbus_process(modbusRxBuffer, inputregister,  coils, huart); // 使用 modbus 库处理报文并回复
-        updateGPIO();
-        HAL_UART_Receive_IT(&huart1, modbusRxBuffer, MODBUS_RX_BUFFER_SIZE);// 重新启动 UART 接收中断
+
+        // 计算接收到的数据长度
+        uint16_t length = MODBUS_RX_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(&hdma_usart1_rx);
+
+        // 确保前几个字节已被更新
+        if (length > 0) {
+            // 数据处理
+            modbus_process(modbusRxBuffer, inputregister, coils, huart);
+
+            // 更新 GPIO 状态
+            updateGPIO();
+        }
+        // 暂停 DMA 接收
+        HAL_UART_DMAStop(huart);
+        // 重新启动 UART 接收 DMA
+        HAL_UART_Receive_DMA(&huart1, modbusRxBuffer, MODBUS_RX_BUFFER_SIZE);
     }
 }
 /* USER CODE END 4 */
@@ -207,11 +219,11 @@ void HAL_UART_IDLE_Callback(UART_HandleTypeDef *huart) {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
